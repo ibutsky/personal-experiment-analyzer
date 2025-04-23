@@ -4,6 +4,8 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import chi2_contingency, f_oneway
+from io import BytesIO
+import base64
 
 st.set_page_config(page_title="Run Your Own Experiment", layout="centered")
 st.title("🧪 Personal Experiment Analyzer")
@@ -16,7 +18,38 @@ _Not sure what statistical significance or p-values mean? Scroll to the bottom o
 """)
 
 # --- Sidebar for input method ---
-input_method = st.sidebar.radio("How would you like to enter your data?", ["Upload CSV", "Manual Entry"])
+input_method = st.sidebar.radio("How would you like to enter your data?", ["Manual Entry", "Upload CSV"])
+sample_data_option = st.sidebar.selectbox("Try an example dataset:", [
+    "None",
+    "Sleep + Supplement (T-test)",
+    "Sleep by Day (ANOVA)",
+    "Sleep Quality & Supplement (Chi-square)",
+    "Sleep Hours vs Energy (Correlation)",
+    "Caffeine & Focus (T-test)",
+    "Exercise Type & Mood (Chi-square)",
+    "Hours Worked vs Productivity (Correlation)",
+    "Snack Type & Satisfaction (ANOVA)",
+    "Music Genre & Concentration (Chi-square)",
+    "Screen Time vs Happiness (Correlation)",
+    "Meditation & Stress Levels (T-test)",
+    "Meal Timing & Energy (ANOVA)"
+])
+
+# --- Preloaded samples ---
+sample_datasets = {
+    "Sleep + Supplement (T-test)": "day,supplement,hours sleep\nMonday,yes,7.5\nMonday,no,5.5\nTuesday,yes,8.3\nWednesday,no,5.1\nThursday,yes,7.9\nFriday,no,6.5",
+    "Sleep by Day (ANOVA)": "day,hours sleep\nMonday,6.5\nTuesday,7.2\nWednesday,6.8\nThursday,7.0\nFriday,8.1\nSaturday,8.4\nSunday,7.5",
+    "Sleep Quality & Supplement (Chi-square)": "supplement,sleep_quality\nyes,good\nyes,excellent\nno,poor\nno,fair\nyes,good\nno,fair",
+    "Sleep Hours vs Energy (Correlation)": "energy_level,hours sleep\n5,6.0\n6,6.5\n7,7.2\n8,7.8\n9,8.1\n10,8.4",
+    "Caffeine & Focus (T-test)": "caffeine,focus_score\nyes,8\nno,6\nyes,7\nno,5\nyes,9\nno,4",
+    "Exercise Type & Mood (Chi-square)": "exercise_type,mood\nyoga,calm\nrunning,energized\nweights,strong\nyoga,calm\nrunning,stressed\nweights,strong",
+    "Hours Worked vs Productivity (Correlation)": "hours_worked,productivity_score\n5,6\n6,7\n7,8\n8,8\n9,7\n10,6",
+    "Snack Type & Satisfaction (ANOVA)": "snack,satisfaction_score\nfruit,7\nchips,5\nnuts,6\nfruit,8\nchips,4\nnuts,7",
+    "Music Genre & Concentration (Chi-square)": "music_genre,concentration\nclassical,high\npop,medium\nrock,low\nclassical,high\npop,medium\nrock,low",
+    "Screen Time vs Happiness (Correlation)": "screen_time,happiness_score\n2,8\n4,7\n6,6\n8,5\n10,4\n12,3",
+    "Meditation & Stress Levels (T-test)": "meditated,stress_level\nyes,3\nno,7\nyes,2\nno,8\nyes,4\nno,6",
+    "Meal Timing & Energy (ANOVA)": "meal_time,energy_score\nmorning,8\nafternoon,7\nevening,5\nmorning,9\nafternoon,6\nevening,4"
+}
 
 # --- Data loading ---
 data = None
@@ -24,13 +57,13 @@ if input_method == "Upload CSV":
     uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
     if uploaded_file is not None:
         data = pd.read_csv(uploaded_file)
+elif sample_data_option != "None":
+    from io import StringIO
+    data = pd.read_csv(StringIO(sample_datasets[sample_data_option]))
 else:
     st.markdown("### Manual Entry")
-#    manual_data = st.text_area("Enter your data as CSV (with headers)",
-    #                           "condition,outcome\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
     manual_data = st.text_area("Enter your data as CSV (with headers)",
-                "supplement,day,sleep quality,energy level,hours sleep\n                 yes,Monday,good,8,7.5\n                 no,Monday,poor,5,5.5\n                 yes,Tuesday,excellent,9,8.3\n                yes,Wednesday,excellent,9,8.5\n               no,Wednesday,poor,4,5.1\n                yes,Thursday,good,7,7.9\n                no,Thursday,poor,5,6.0\n                yes,Friday,good,8,7.8\n                no,Friday,fair,6,6.5\n                no,Saturday,fair,6,6.4\n                yes,Saturday,good,7,7.2\n                no,Sunday,fair,5,6.1\n                yes,Sunday,good,8,7.6")
-
+                               "day,supplement,hours sleep,sleep quality,energy level\nMonday,yes,7.5,good,8\nMonday,no,5.5,poor,5\nTuesday,yes,8.3,excellent,9\nWednesday,yes,8.5,excellent,9\nWednesday,no,5.1,poor,4\nThursday,yes,7.9,good,7\nThursday,no,6.0,poor,5\nFriday,yes,7.8,good,8\nFriday,no,6.5,fair,6\nSaturday,no,6.4,fair,6\nSaturday,yes,7.2,good,7\nSunday,no,6.1,fair,5\nSunday,yes,7.6,good,8")
     try:
         from io import StringIO
         data = pd.read_csv(StringIO(manual_data))
@@ -45,14 +78,13 @@ if data is not None:
     if len(colnames) < 2:
         st.error("Please provide at least two columns in your data.")
     else:
-        condition_col = st.selectbox("Select the column for your experimental condition", colnames)
-        outcome_col = st.selectbox("Select the column for your outcome variable", colnames, index=1 if len(colnames) > 1 else 0)
+        condition_col = st.selectbox("Select the column for your experimental condition", colnames, index=colnames.index("supplement") if "supplement" in colnames else 0)
+        outcome_col = st.selectbox("Select the column for your outcome variable", colnames, index=colnames.index("hours sleep") if "hours sleep" in colnames else 1)
 
         try:
             data[condition_col] = data[condition_col].astype(str).str.strip()
             data[outcome_col] = data[outcome_col].astype(str).str.strip()
 
-            # Try numeric coercion to check for quantitative values
             data_num = data.copy()
             data_num[outcome_col] = pd.to_numeric(data_num[outcome_col], errors='coerce')
             data_num[condition_col] = pd.to_numeric(data_num[condition_col], errors='coerce')
@@ -60,23 +92,37 @@ if data is not None:
             is_condition_numeric = data_num[condition_col].notna().all()
             is_outcome_numeric = data_num[outcome_col].notna().all()
 
+            result_text = ""
+            plot_buffer = BytesIO()
+
             if is_condition_numeric and is_outcome_numeric:
                 corr, pval = stats.pearsonr(data_num[condition_col], data_num[outcome_col])
-                st.subheader("📈 Visualization")
+                st.subheader("📊 Summary Statistics")
+                stats_summary = data[[condition_col, outcome_col]].copy()
+                stats_summary[outcome_col] = pd.to_numeric(stats_summary[outcome_col], errors='coerce')
+                stats_table = stats_summary.groupby(condition_col)[outcome_col].agg(['count', 'mean', 'std'])
+                st.table(stats_table)
                 fig, ax = plt.subplots()
                 sns.regplot(x=data_num[condition_col], y=data_num[outcome_col], ax=ax)
+                fig.savefig(plot_buffer, format="png")
                 st.pyplot(fig)
                 st.subheader("🧠 Correlation Test Result")
-                st.write(f"Pearson correlation: **{corr:.3f}**, p-value: **{pval:.4f}**")
-                st.markdown("A **correlation** shows how closely two variables are related. A p-value < 0.05 suggests this relationship likely isn't due to chance.")
+                result_text = f"There is a Pearson correlation of {corr:.3f} between {condition_col} and {outcome_col}, with a p-value of {pval:.4f}. "
                 if pval < 0.05:
-                    st.success("✅ There is a statistically significant correlation! 🎉")
+                    st.success(result_text + "This is considered statistically significant, meaning it's unlikely to have occurred by chance. 🎉")
                 else:
-                    st.info("⚠️ No significant correlation (p >= 0.05). Keep exploring!")
+                    st.info(result_text + "This is not statistically significant. It might just be due to random variation.")
+                st.markdown("**⚠️ Note:** Correlation does not imply causation. Just because two things are related doesn’t mean one causes the other. Learn more: [Correlation ≠ Causation](https://www.tylervigen.com/spurious-correlations)")
 
             elif not is_condition_numeric and is_outcome_numeric:
                 groups = data[condition_col].unique()
+                st.subheader("📊 Summary Statistics")
+                stats_summary = data[[condition_col, outcome_col]].copy()
+                stats_summary[outcome_col] = pd.to_numeric(stats_summary[outcome_col], errors='coerce')
+                stats_table = stats_summary.groupby(condition_col)[outcome_col].agg(['count', 'mean', 'std'])
+                st.table(stats_table)
                 if len(groups) == 2:
+                    
                     group1 = data[data[condition_col] == groups[0]][outcome_col].astype(float).dropna()
                     group2 = data[data[condition_col] == groups[1]][outcome_col].astype(float).dropna()
                     tstat, pval = stats.ttest_ind(group1, group2, equal_var=False)
@@ -84,14 +130,14 @@ if data is not None:
                     fig, ax = plt.subplots()
                     sns.boxplot(data=data, x=condition_col, y=outcome_col, ax=ax, showfliers=False)
                     sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", color="black")
+                    fig.savefig(plot_buffer, format="png")
                     st.pyplot(fig)
-                    st.subheader("🧠 Statistical Test Result")
-                    st.write(f"T-test p-value: **{pval:.4f}**")
-                    st.markdown("A **t-test** compares the means of two groups. A low p-value means there's likely a real difference between them.")
+                    st.subheader("🧠 T-Test Result")
+                    result_text = f"The average {outcome_col} was different for each group of {condition_col}. T-test p-value: {pval:.4f}. "
                     if pval < 0.05:
-                        st.success("✅ Your result is statistically significant (p < 0.05). 🎉")
+                        st.success(result_text + "This difference is statistically significant. 🎉")
                     else:
-                        st.info("⚠️ Your result is *not* statistically significant (p >= 0.05). Keep collecting data!")
+                        st.info(result_text + "This difference is not statistically significant.")
                 else:
                     group_lists = [data[data[condition_col] == g][outcome_col].astype(float).dropna() for g in groups]
                     fstat, pval = f_oneway(*group_lists)
@@ -99,14 +145,14 @@ if data is not None:
                     fig, ax = plt.subplots()
                     sns.boxplot(data=data, x=condition_col, y=outcome_col, ax=ax, showfliers=False)
                     sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", color="black")
+                    fig.savefig(plot_buffer, format="png")
                     st.pyplot(fig)
                     st.subheader("🧠 ANOVA Test Result")
-                    st.write(f"ANOVA F-statistic: **{fstat:.2f}**, p-value: **{pval:.4f}**")
-                    st.markdown("An **ANOVA** compares the means across more than two groups. A low p-value suggests that at least one group is significantly different.")
+                    result_text = f"There are multiple groups in {condition_col}. ANOVA F-statistic: {fstat:.2f}, p-value: {pval:.4f}. "
                     if pval < 0.05:
-                        st.success("✅ At least one group differs significantly (p < 0.05). 🎉")
+                        st.success(result_text + "At least one group differs significantly. 🎉")
                     else:
-                        st.info("⚠️ No significant group differences found (p >= 0.05).")
+                        st.info(result_text + "No significant differences detected between the groups.")
 
             elif not is_condition_numeric and not is_outcome_numeric:
                 contingency = pd.crosstab(data[condition_col], data[outcome_col])
@@ -114,17 +160,42 @@ if data is not None:
                 st.subheader("📈 Visualization")
                 fig, ax = plt.subplots()
                 sns.heatmap(contingency, annot=True, fmt="d", cmap="Blues", ax=ax)
+                fig.savefig(plot_buffer, format="png")
                 st.pyplot(fig)
                 st.subheader("🧠 Chi-Square Test Result")
-                st.write(f"Chi-square: **{chi2:.2f}**, df: {dof}, p-value: **{pval:.4f}**")
-                st.markdown("A **Chi-square test** checks if two categories are related. A low p-value suggests there's likely a meaningful connection.")
+                result_text = f"There is a relationship between {condition_col} and {outcome_col}. Chi-square statistic: {chi2:.2f}, p-value: {pval:.4f}. "
                 if pval < 0.05:
-                    st.success("✅ There is a significant relationship between the variables! 🎉")
+                    st.success(result_text + "This relationship is statistically significant. 🎉")
                 else:
-                    st.info("⚠️ No significant relationship found (p >= 0.05).")
+                    st.info(result_text + "No statistically significant relationship was found.")
 
             else:
                 st.error("Unsupported combination. Please double-check your variable types.")
+
+            # --- Downloadable content ---
+            st.markdown("### 📥 Export Your Results")
+            csv = data.to_csv(index=False).encode('utf-8')
+            st.download_button("Download your dataset as CSV", csv, "experiment_data.csv", "text/csv")
+
+            if plot_buffer:
+                st.download_button("Download plot as PNG", plot_buffer.getvalue(), "result_plot.png", "image/png")
+
+            # --- Share results (hypothetical: can add link later) ---
+            st.markdown("### 📣 Share Your Results")
+            st.markdown("Want to share your results? Right-click and copy your plot, or download it above and post it on social media!")
+            st.markdown("Optionally, tag your post with **#PersonalExperiment** to join the movement! 🧠✨")
+            st.markdown("You can share your findings directly on social media:")
+            share_url = "https://your-streamlit-app-url"  # Replace with your deployed app's URL
+            share_text = "Check out the results of my personal experiment! 📊 #PersonalExperiment"
+
+            fb_link = f"https://www.facebook.com/sharer/sharer.php?u={share_url}"
+            tw_link = f"https://twitter.com/intent/tweet?url={share_url}&text={share_text}"
+            ig_info = "Instagram doesn't support direct link shares, but you can post the image you downloaded to your story with #PersonalExperiment."
+
+            st.markdown(f"[Share on Facebook]({fb_link})")
+            st.markdown(f"[Share on X (Twitter)]({tw_link})")
+            st.markdown(f"📸 Instagram: {ig_info}")
+            st.markdown("Want to share your results? Right-click and copy your plot, or download it above and post it on social media!")
 
         except Exception as e:
             st.error(f"An error occurred during processing: {e}")
@@ -138,6 +209,9 @@ if data is not None:
 - [Pearson correlation explained](https://www.statisticshowto.com/probability-and-statistics/correlation-coefficient-formula/)
 - [Chi-square test overview](https://www.scribbr.com/statistics/chi-square-test/)
 - [Intro to ANOVA](https://www.scribbr.com/statistics/anova/)
+- [Correlation ≠ Causation (with fun examples)](https://www.tylervigen.com/spurious-correlations)
 
 These resources are not required, but if you're curious, they'll help you better understand your results.
 """)
+
+
