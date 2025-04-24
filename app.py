@@ -18,39 +18,27 @@ Use this tool to analyze whether a certain action (like eating a banana before b
 Upload a file, manually enter your data below, or take inspiration from one of the example datasets.""")
 
 
-# --- Sidebar for input method ---
-input_method = st.sidebar.radio("How would you like to enter your data?", ["Manual Entry", "Upload File"])
-sample_data_option = st.sidebar.selectbox("Try an example dataset:", [
-    "None",
-    "Sleep + Supplement (T-test)",
-    "Sleep by Day (ANOVA)",
-    "Sleep Quality & Supplement (Chi-square)",
-    "Sleep Hours vs Energy (Correlation)",
-    "Caffeine & Focus (T-test)",
-    "Exercise Type & Mood (Chi-square)",
-    "Hours Worked vs Productivity (Correlation)",
-    "Snack Type & Satisfaction (ANOVA)",
-    "Music Genre & Concentration (Chi-square)",
-    "Screen Time vs Happiness (Correlation)",
-    "Meditation & Stress Levels (T-test)",
-    "Meal Timing & Energy (ANOVA)"
-])
+st.sidebar.header("📊 Add Some Data")
 
-# --- Preloaded samples ---
-sample_datasets = {
-    "Sleep Hours vs Energy (Correlation)": "energy_level,hours sleep\n5,6.0\n6,6.5\n7,7.2\n8,7.8\n9,8.1\n10,8.4",
-    "Hours Worked vs Productivity (Correlation)": "hours_worked,productivity_score\n5,6\n6,7\n7,8\n8,8\n9,7\n10,6",
-    "Sleep + Supplement (T-test)": "day,supplement,hours sleep\nMonday,yes,7.5\nMonday,no,5.5\nTuesday,yes,8.3\nWednesday,no,5.1\nThursday,yes,7.9\nFriday,no,6.5",
-    "Meditation & Stress Levels (T-test)": "meditated,stress_level\nyes,3\nno,7\nyes,2\nno,8\nyes,4\nno,6",
-    "Caffeine & Focus (T-test)": "caffeine,focus_score\nyes,8\nno,6\nyes,7\nno,5\nyes,9\nno,4",
-    "Snack Type & Satisfaction (ANOVA)": "snack,satisfaction_score\nfruit,7\nchips,5\nnuts,6\nfruit,8\nchips,4\nnuts,7",
-    "Exercise Type & Mood (Chi-square)": "exercise_type,mood\nyoga,calm\nrunning,energized\nweights,strong\nyoga,calm\nrunning,stressed\nweights,strong",
-    "Music Genre & Concentration (Chi-square)": "music_genre,concentration\nclassical,high\npop,medium\nrock,low\nclassical,high\npop,medium\nrock,low"
-}
+if "data_source" not in st.session_state:
+    st.session_state["data_source"] = "none"
+    st.session_state["data"] = None
 
-# --- Data loading ---
-data = None
-if input_method == "Upload File":
+col1, col2, col3 = st.sidebar.columns(3)
+with col1:
+    if st.button("📁 Upload File"):
+        st.session_state["data_source"] = "upload"
+with col2:
+    if st.button("✍️ Manual Entry"):
+        st.session_state["data_source"] = "manual"
+with col3:
+    if st.button("🎓 Sample Dataset"):
+        st.session_state["data_source"] = "sample"
+        
+        
+
+data = pd.read_csv(StringIO("eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5"))
+if st.session_state["data_source"] == "upload":
     uploaded_file = st.sidebar.file_uploader("Upload your file", type=["csv", "tsv", "xls",
                                         "xlsx", "pkl", "parquet", "json", "xml"])
     if uploaded_file is not None:
@@ -100,23 +88,52 @@ if input_method == "Upload File":
                 st.error("Unsupported file type.")
         except Exception as e:
             st.error(f"Could not read file: {e}")
-
-elif sample_data_option != "None":
-    from io import StringIO
-    data = pd.read_csv(StringIO(sample_datasets[sample_data_option]))
-else:
-    st.sidebar.markdown("### Manual Entry")
-
-    manual_data = st.sidebar.text_area("Enter your data as CSV (with headers)",
-                               "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
+            
+elif st.session_state["data_source"] == "manual":
+    #default_df = pd.read_csv(StringIO(default_csv))
+    manual_data = st.sidebar.text_area("Manually enter your data as CSV (with headers)",
+                           "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
     try:
         from io import StringIO
         data = pd.read_csv(StringIO(manual_data))
     except Exception as e:
         st.error("Failed to parse your input. Check format.")
-        
+        data = st.data_editor(default_df, num_rows="dynamic", use_container_width=True)
+
+#elif sample_data_option != "None":
+#if data is None:
+  #  from io import StringIO
+  #  data = pd.read_csv(StringIO(sample_datasets[sample_data_option]))
+#else:
+#st.sidebar.markdown("### Manual Entry")
+
+#manual_data = st.sidebar.text_area("Manually enter your data as CSV (with headers)",
+#                           "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
+#try:
+#    from io import StringIO
+#    data = pd.read_csv(StringIO(manual_data))
+##except Exception as e:
+  #  st.error("Failed to parse your input. Check format.")
+
+elif st.session_state["data_source"] == "sample":
+    # --- Preloaded samples ---
+    sample_datasets = {
+    "Sleep Hours vs Energy (Correlation)": "energy_level,hours sleep\n5,6.0\n6,6.5\n7,7.2\n8,7.8\n9,8.1\n10,8.4",
+    "Hours Worked vs Productivity (Correlation)": "hours_worked,productivity_score\n5,6\n6,7\n7,8\n8,8\n9,7\n10,6",
+    "Sleep + Supplement (T-test)": "day,supplement,hours sleep\nMonday,yes,7.5\nMonday,no,5.5\nTuesday,yes,8.3\nWednesday,no,5.1\nThursday,yes,7.9\nFriday,no,6.5",
+    "Meditation & Stress Levels (T-test)": "meditated,stress_level\nyes,3\nno,7\nyes,2\nno,8\nyes,4\nno,6",
+    "Caffeine & Focus (T-test)": "caffeine,focus_score\nyes,8\nno,6\nyes,7\nno,5\nyes,9\nno,4",
+    "Snack Type & Satisfaction (ANOVA)": "snack,satisfaction_score\nfruit,7\nchips,5\nnuts,6\nfruit,8\nchips,4\nnuts,7",
+    "Exercise Type & Mood (Chi-square)": "exercise_type,mood\nyoga,calm\nrunning,energized\nweights,strong\nyoga,calm\nrunning,stressed\nweights,strong",
+    "Music Genre & Concentration (Chi-square)": "music_genre,concentration\nclassical,high\npop,medium\nrock,low\nclassical,high\npop,medium\nrock,low"
+    }
+    sample_name = st.sidebar.selectbox("Choose a sample dataset", list(sample_datasets.keys()))
+    data = pd.read_csv(StringIO(sample_datasets[sample_name]))
+
         
 # --- Sidebar for input method ---
+st.sidebar.header("Feeling Stuck?")
+
 with st.sidebar.expander("🧪 Try One of These Personal Experiments"):
     st.markdown("""
 Here are some fun, simple experiments you can try:
