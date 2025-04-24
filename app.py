@@ -128,6 +128,10 @@ if data is not None:
                     st.success(result_text + "This is considered statistically significant, meaning it's unlikely to have occurred by chance. 🎉")
                 else:
                     st.info(result_text + "This is not statistically significant. It might just be due to random variation.")
+                group_sizes = len(data_num[outcome_col])
+                if group_sizes < 20:
+                    st.warning("⚠️ Warning: One or more groups have fewer than 20 data points. Even if a result is marked 'statistically significant', it may not be meaningful with very small sample sizes. Collecting more data improves reliability.")
+
                 st.markdown("**⚠️ Note:** Correlation does not imply causation. Just because two things are related doesn’t mean one causes the other. Learn more: [Correlation ≠ Causation](https://www.tylervigen.com/spurious-correlations)")
 
             elif not is_condition_numeric and is_outcome_numeric:
@@ -155,6 +159,8 @@ if data is not None:
                         st.success(result_text + "This difference is statistically significant. 🎉")
                     else:
                         st.info(result_text + "This difference is not statistically significant.")
+                    if stats_table['count'].min() < 20:
+                        st.warning("⚠️ Warning: One or more groups have fewer than 20 data points. Even if a result is marked 'statistically significant', it may not be meaningful with very small sample sizes. Collecting more data improves reliability.")
                 else:
                     group_lists = [data[data[condition_col] == g][outcome_col].astype(float).dropna() for g in groups]
                     fstat, pval = f_oneway(*group_lists)
@@ -170,6 +176,8 @@ if data is not None:
                         st.success(result_text + "At least one group differs significantly. 🎉")
                     else:
                         st.info(result_text + "No significant differences detected between the groups.")
+                    if stats_table['count'].min() < 20:
+                        st.warning("⚠️ Warning: One or more groups have fewer than 20 data points. Even if a result is marked 'statistically significant', it may not be meaningful with very small sample sizes. Collecting more data improves reliability.")
 
             elif not is_condition_numeric and not is_outcome_numeric:
                 contingency = pd.crosstab(data[condition_col], data[outcome_col])
@@ -185,7 +193,9 @@ if data is not None:
                     st.success(result_text + "This relationship is statistically significant. 🎉")
                 else:
                     st.info(result_text + "No statistically significant relationship was found.")
-
+                group_counts = contingency.sum(axis=1)  # total per condition group
+                if group_counts.min() < 20:
+                    st.warning("⚠️ Warning: One or more groups have fewer than 20 data points. Even if a result is marked 'statistically significant', it may not be meaningful with very small sample sizes. Collecting more data improves reliability.")
             else:
                 st.error("Unsupported combination. Please double-check your variable types.")
 
