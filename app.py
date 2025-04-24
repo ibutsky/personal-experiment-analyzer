@@ -15,56 +15,8 @@ st.title("🧪 Personal Experiment Analyzer")
 
 st.markdown("""
 Use this tool to analyze whether a certain action (like eating a banana before bed) affects an outcome (like sleep hours).
-Upload a file, manually enter your data below, or take inspiration from on of the example datasets.\n\n Feeling stuck? """)
+Upload a file, manually enter your data below, or take inspiration from one of the example datasets.""")
 
-# --- Sidebar for input method ---
-with st.expander("🧪 Try One of These Personal Experiments"):
-    st.markdown("""
-Here are some fun, simple experiments you can try:
-
-- **☕ Coffee & Focus**  
-  *Does caffeine help me focus?*  
-  Track: `caffeinated (yes/no)`, `focus score (1–10)`
-
-- **🎵 Music & Concentration**  
-  *Does music type affect how well I concentrate?*  
-  Track: `music type`, `concentration level`
-
-- **💤 Screens & Sleep**  
-  *Does screen time before bed hurt my sleep?*  
-  Track: `screen before bed (yes/no)`, `sleep hours`
-
-- **🕒 Hours Worked & Productivity**  
-  *Is there an optimal amount of work time for me?*  
-  Track: `hours worked`, `productivity score`
-
-- **🥑 Snack Type & Satisfaction**  
-  *Which snacks keep me full the longest?*  
-  Track: `snack type`, `satiety rating`
-
-- **🏃 Walks & Mood**  
-  *Does a walk boost my mood?*  
-  Track: `walked (yes/no)`, `mood`
-
-Start small—just 7 days of tracking can give surprising insights!
-""")
-
-
-with st.expander("📲 Explore Data You Already Have from Other Apps"):
-    st.markdown("""
-    Many apps you already use let you export your data as a CSV. Here are a few examples:
-
-    - **Apple Health**: Use [QS Access](https://apps.apple.com/us/app/qs-access/id920297614)
-    - **Strava**: [Export here](https://www.strava.com/settings/data_export)
-    - **Fitbit**: [Export from your dashboard](https://www.fitbit.com/settings/data/export)
-    - **Google Fit**: Use [Google Takeout](https://takeout.google.com/)
-
-    Once downloaded, upload the file using the **Upload CSV** tab above.
-    """)
-
-st.markdown("""
-_Not sure what statistical significance or p-values mean? Scroll to the bottom of the page for a quick intro and helpful links!_
-""")
 
 # --- Sidebar for input method ---
 input_method = st.sidebar.radio("How would you like to enter your data?", ["Manual Entry", "Upload File"])
@@ -99,7 +51,8 @@ sample_datasets = {
 # --- Data loading ---
 data = None
 if input_method == "Upload File":
-    uploaded_file = st.file_uploader("Upload your file", type=["csv", "tsv", "xls", "xlsx", "pkl", "parquet"])
+    uploaded_file = st.sidebar.file_uploader("Upload your file", type=["csv", "tsv", "xls",
+                                        "xlsx", "pkl", "parquet", "json", "xml"])
     if uploaded_file is not None:
         file_type = uploaded_file.name.split('.')[-1]
         try:
@@ -113,6 +66,36 @@ if input_method == "Upload File":
                 data = pd.read_pickle(uploaded_file)
             elif file_type == "parquet":
                 data = pd.read_parquet(uploaded_file)
+            elif file_type == "json":
+                import json
+                raw_json = json.load(uploaded_file)
+
+                # If it's a list of dicts, just use DataFrame directly
+                if isinstance(raw_json, list):
+                    data = pd.DataFrame(raw_json)
+                else:
+                    # Try flattening from a likely nested key
+                    for key in raw_json:
+                        if isinstance(raw_json[key], list):
+                            try:
+                                data = json_normalize(raw_json[key])
+                                break
+                            except Exception as e:
+                                st.error(f"Could not flatten nested JSON structure: {e}")
+                        else:
+                            st.error("No list-like structure found in your JSON file.")
+            elif file_type == "xml":
+                import xml.etree.ElementTree as ET
+                tree = ET.parse(uploaded_file)
+                root = tree.getroot()
+
+                # Apple Health specific: look for <Record> tags
+                records = []
+                for record in root.findall('Record'):
+                    record_data = record.attrib
+                    records.append(record_data)
+
+                data = pd.DataFrame(records)
             else:
                 st.error("Unsupported file type.")
         except Exception as e:
@@ -122,15 +105,111 @@ elif sample_data_option != "None":
     from io import StringIO
     data = pd.read_csv(StringIO(sample_datasets[sample_data_option]))
 else:
-    st.markdown("### Manual Entry")
+    st.sidebar.markdown("### Manual Entry")
 
-    manual_data = st.text_area("Enter your data as CSV (with headers)",
+    manual_data = st.sidebar.text_area("Enter your data as CSV (with headers)",
                                "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
     try:
         from io import StringIO
         data = pd.read_csv(StringIO(manual_data))
     except Exception as e:
         st.error("Failed to parse your input. Check format.")
+        
+        
+# --- Sidebar for input method ---
+with st.sidebar.expander("🧪 Try One of These Personal Experiments"):
+    st.markdown("""
+Here are some fun, simple experiments you can try:
+
+- **☕ Coffee & Focus**  
+  *Does caffeine help me focus?*  
+  Track: `caffeinated (yes/no)`, `focus score (1–10)`
+
+- **🎵 Music & Concentration**  
+  *Does music type affect how well I concentrate?*  
+  Track: `music type`, `concentration level`
+
+- **💤 Screens & Sleep**  
+  *Does screen time before bed hurt my sleep?*  
+  Track: `screen before bed (yes/no)`, `sleep hours`
+
+- **🕒 Hours Worked & Productivity**  
+  *Is there an optimal amount of work time for me?*  
+  Track: `hours worked`, `productivity score`
+
+- **🥑 Snack Type & Satisfaction**  
+  *Which snacks keep me full the longest?*  
+  Track: `snack type`, `satiety rating`
+
+- **🏃 Walks & Mood**  
+  *Does a walk boost my mood?*  
+  Track: `walked (yes/no)`, `mood`
+
+Start small—just 7 days of tracking can give surprising insights!
+""")
+
+with st.sidebar.expander("📲 Explore Data You May Already Have from Other Apps"):
+    st.markdown("""
+### Export Your Data for Analysis
+
+If you use fitness or health tracking apps, you may already have useful data! Here's how to export it:
+
+---
+
+#### 🍎 Apple Health (iPhone/Apple Watch)
+1. Open the **Health** app
+2. Tap your profile → **Export All Health Data**
+3. You'll get a `.zip` with an `export.xml`
+4. Convert using:
+   - [QS Access](https://apps.apple.com/us/app/qs-access/id920297614) (CSV)
+   - [Health Auto Export](https://apps.apple.com/us/app/health-auto-export-to-csv/id1455780541) (Google Sheets/iCloud)
+
+---
+
+#### 📱 Google Fit
+1. Go to [Google Takeout](https://takeout.google.com/)
+2. Select only **Google Fit**
+3. Export as `.zip` and extract `Daily Summaries.json`
+4. Convert JSON to CSV using a tool or script
+
+---
+
+#### 🚴 Strava
+**Option 1: Full Archive**
+- Visit: [strava.com/settings/data_export](https://www.strava.com/settings/data_export)
+- Request your archive → download `.zip` → use `activities.csv`
+
+**Option 2: Single Activity**
+- Open any activity → “...” → **Export Original**
+- Convert `.fit/.gpx` using [fitfiletools.com](https://www.fitfiletools.com/)
+
+---
+
+#### ⌚ Garmin Connect
+1. Log into [Garmin Connect](https://connect.garmin.com/)
+2. Go to Profile > Account Settings > Export Your Data
+3. You'll get a `.zip` with `Activities.csv` and JSON logs
+4. Or: Export individual workouts (gear icon > Export CSV)
+
+---
+
+#### 💤 Fitbit
+1. Go to: [fitbit.com/settings/data/export](https://www.fitbit.com/settings/data/export)
+2. Select date range and download `.zip`
+3. Includes CSVs for sleep, steps, activities, heart rate
+
+---
+
+Once exported:
+- Clean in Google Sheets or Excel if needed
+- Rename columns to match your experiment (e.g., `condition`, `outcome`)
+- Upload to this app using **Upload CSV** or paste into the editable table
+    """)
+
+
+st.markdown("""
+_Not sure what statistical significance or p-values mean? Scroll to the bottom of the page for a quick intro and helpful links!_
+""")
 
 if data is not None:
     st.subheader("Your Data")
