@@ -5,5 +5,4 @@ matplotlib
 seaborn
 numpy
 scikit-learn
-json
 lxml
