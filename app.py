@@ -40,8 +40,6 @@ sample_data_option = st.sidebar.selectbox("Try an example dataset:", [
 # --- Preloaded samples ---
 sample_datasets = {
     "Sleep + Supplement (T-test)": "day,supplement,hours sleep\nMonday,yes,7.5\nMonday,no,5.5\nTuesday,yes,8.3\nWednesday,no,5.1\nThursday,yes,7.9\nFriday,no,6.5",
-    "Sleep by Day (ANOVA)": "day,hours sleep\nMonday,6.5\nTuesday,7.2\nWednesday,6.8\nThursday,7.0\nFriday,8.1\nSaturday,8.4\nSunday,7.5",
-    "Sleep Quality & Supplement (Chi-square)": "supplement,sleep_quality\nyes,good\nyes,excellent\nno,poor\nno,fair\nyes,good\nno,fair",
     "Sleep Hours vs Energy (Correlation)": "energy_level,hours sleep\n5,6.0\n6,6.5\n7,7.2\n8,7.8\n9,8.1\n10,8.4",
     "Caffeine & Focus (T-test)": "caffeine,focus_score\nyes,8\nno,6\nyes,7\nno,5\nyes,9\nno,4",
     "Exercise Type & Mood (Chi-square)": "exercise_type,mood\nyoga,calm\nrunning,energized\nweights,strong\nyoga,calm\nrunning,stressed\nweights,strong",
@@ -49,8 +47,7 @@ sample_datasets = {
     "Snack Type & Satisfaction (ANOVA)": "snack,satisfaction_score\nfruit,7\nchips,5\nnuts,6\nfruit,8\nchips,4\nnuts,7",
     "Music Genre & Concentration (Chi-square)": "music_genre,concentration\nclassical,high\npop,medium\nrock,low\nclassical,high\npop,medium\nrock,low",
     "Screen Time vs Happiness (Correlation)": "screen_time,happiness_score\n2,8\n4,7\n6,6\n8,5\n10,4\n12,3",
-    "Meditation & Stress Levels (T-test)": "meditated,stress_level\nyes,3\nno,7\nyes,2\nno,8\nyes,4\nno,6",
-    "Meal Timing & Energy (ANOVA)": "meal_time,energy_score\nmorning,8\nafternoon,7\nevening,5\nmorning,9\nafternoon,6\nevening,4"
+    "Meditation & Stress Levels (T-test)": "meditated,stress_level\nyes,3\nno,7\nyes,2\nno,8\nyes,4\nno,6"
 }
 
 # --- Data loading ---
@@ -79,9 +76,6 @@ else:
 
     manual_data = st.text_area("Enter your data as CSV (with headers)",
                                "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
-
-   # manual_data = st.text_area("Enter your data as CSV (with headers)",
-       #                        "day,supplement,hours sleep,sleep quality,energy level\nMonday,yes,7.5,good,8\nMonday,no,5.5,poor,5\nTuesday,yes,8.3,excellent,9\nWednesday,yes,8.5,excellent,9\nWednesday,no,5.1,poor,4\nThursday,yes,7.9,good,7\nThursday,no,6.0,poor,5\nFriday,yes,7.8,good,8\nFriday,no,6.5,fair,6\nSaturday,no,6.4,fair,6\nSaturday,yes,7.2,good,7\nSunday,no,6.1,fair,5\nSunday,yes,7.6,good,8")
     try:
         from io import StringIO
         data = pd.read_csv(StringIO(manual_data))
@@ -138,6 +132,7 @@ if data is not None:
                 st.markdown("**⚠️ Note:** Correlation does not imply causation. Just because two things are related doesn’t mean one causes the other. Learn more: [Correlation ≠ Causation](https://www.tylervigen.com/spurious-correlations)")
 
             elif not is_condition_numeric and is_outcome_numeric:
+                data[outcome_col] = pd.to_numeric(data_num[outcome_col], errors='coerce')
                 groups = data[condition_col].unique()
                 st.subheader("📊 Summary Statistics")
                 stats_summary = data[[condition_col, outcome_col]].copy()
@@ -173,7 +168,7 @@ if data is not None:
                     st.subheader("📈 Visualization")
                     fig, ax = plt.subplots()
                     sns.boxplot(data=data, x=condition_col, y=outcome_col, ax=ax, showfliers=False)
-                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="None", markers="D", linestyles = "None", color="black")
+                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci=None, markers="D", linestyles = "None", color="black")
                     fig.savefig(plot_buffer, format="png")
                     st.pyplot(fig)
                     st.subheader("📖 How to Read This Plot")
