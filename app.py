@@ -122,6 +122,9 @@ if data is not None:
                 sns.regplot(x=data_num[condition_col], y=data_num[outcome_col], ax=ax)
                 fig.savefig(plot_buffer, format="png")
                 st.pyplot(fig)
+                st.subheader("📖 How to Read This Plot")
+                st.markdown("This scatterplot shows the relationship between two numeric variables.\n- Each point represents one observation.\n- The black line is a best-fit line showing the trend.\n- If the points form a rising pattern, the variables are positively correlated.\n- If they fall together, it's a negative correlation.\n- The tighter the points hug the line, the stronger the relationship.")
+                
                 st.subheader("🧠 Correlation Test Result")
                 result_text = f"There is a Pearson correlation of {corr:.3f} between {condition_col} and {outcome_col}, with a p-value of {pval:.4f}. "
                 if pval < 0.05:
@@ -150,9 +153,12 @@ if data is not None:
                     st.subheader("📈 Visualization")
                     fig, ax = plt.subplots()
                     sns.boxplot(data=data, x=condition_col, y=outcome_col, ax=ax, showfliers=False)
-                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", linestyles = "None", color="black")
+                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci=None, markers="D", linestyles = "None", color="black")
                     fig.savefig(plot_buffer, format="png")
                     st.pyplot(fig)
+                    
+                    st.subheader("📖 How to Read This Plot")
+                    st.markdown("This plot compares outcomes across different groups.\n\n- The box shows the middle 50% of values (interquartile range).\n- The line in the box is the **median**.\n- The dots represent **mean values** for each group.\n- Error bars show the **standard deviation**.\n- Wider boxes or long whiskers = more variability.\n\n**Tip:** If boxes overlap a lot, the groups might not be very different.")
                     st.subheader("🧠 T-Test Result")
                     result_text = f"The average {outcome_col} was different for each group of {condition_col}. T-test p-value: {pval:.4f}. "
                     if pval < 0.05:
@@ -167,9 +173,11 @@ if data is not None:
                     st.subheader("📈 Visualization")
                     fig, ax = plt.subplots()
                     sns.boxplot(data=data, x=condition_col, y=outcome_col, ax=ax, showfliers=False)
-                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", linestyles = "None", color="black")
+                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="None", markers="D", linestyles = "None", color="black")
                     fig.savefig(plot_buffer, format="png")
                     st.pyplot(fig)
+                    st.subheader("📖 How to Read This Plot")
+                    st.markdown("This plot compares outcomes across different groups.\n\n- The box shows the middle 50% of values (interquartile range).\n- The line in the box is the **median**.\n- The dots represent **mean values** for each group.\n- Error bars show the **standard deviation**.\n- Wider boxes or long whiskers = more variability.\n\n**Tip:** If boxes overlap a lot, the groups might not be very different.")
                     st.subheader("🧠 ANOVA Test Result")
                     result_text = f"There are multiple groups in {condition_col}. ANOVA F-statistic: {fstat:.2f}, p-value: {pval:.4f}. "
                     if pval < 0.05:
@@ -187,6 +195,9 @@ if data is not None:
                 sns.heatmap(contingency, annot=True, fmt="d", cmap="Blues", ax=ax)
                 fig.savefig(plot_buffer, format="png")
                 st.pyplot(fig)
+                st.subheader("📖 How to Read This Plot")
+                st.markdown("This grid shows how often each combination of categories occurred.\n\n- Darker cells = more observations.\n- Rows = one variable (e.g., treatment type)\n- Columns = the other variable (e.g., outcome)\n- If most of the values cluster in a few squares, the variables might be related.\n- A Chi-square test checks whether the row and column variables are independent or not.\n\n**Look for patterns like: \"this group almost always had this outcome.\"**\"")
+                
                 st.subheader("🧠 Chi-Square Test Result")
                 result_text = f"There is a relationship between {condition_col} and {outcome_col}. Chi-square statistic: {chi2:.2f}, p-value: {pval:.4f}. "
                 if pval < 0.05:
