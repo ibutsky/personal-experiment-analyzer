@@ -6,6 +6,8 @@ import seaborn as sns
 from scipy.stats import chi2_contingency, f_oneway
 from io import BytesIO
 import base64
+from io import StringIO
+
 
 st.set_page_config(page_title="Run Your Own Experiment", layout="centered")
 st.title("🧪 Personal Experiment Analyzer")
@@ -54,16 +56,32 @@ sample_datasets = {
 # --- Data loading ---
 data = None
 if input_method == "Upload CSV":
-    uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+    uploaded_file = st.file_uploader("Upload your file (CSV, TSV, XLS, XLSX)", type=["csv", "tsv", "xls", "xlsx"])
     if uploaded_file is not None:
-        data = pd.read_csv(uploaded_file)
+        file_type = uploaded_file.name.split('.')[-1]
+        try:
+            if file_type == 'csv':
+                data = pd.read_csv(uploaded_file)
+            elif file_type == 'tsv':
+                data = pd.read_csv(uploaded_file, sep='\t')
+            elif file_type in ['xls', 'xlsx']:
+                data = pd.read_excel(uploaded_file)
+            else:
+                st.error("Unsupported file type.")
+        except Exception as e:
+            st.error(f"Could not read file: {e}")
+
 elif sample_data_option != "None":
     from io import StringIO
     data = pd.read_csv(StringIO(sample_datasets[sample_data_option]))
 else:
     st.markdown("### Manual Entry")
+
     manual_data = st.text_area("Enter your data as CSV (with headers)",
-                               "day,supplement,hours sleep,sleep quality,energy level\nMonday,yes,7.5,good,8\nMonday,no,5.5,poor,5\nTuesday,yes,8.3,excellent,9\nWednesday,yes,8.5,excellent,9\nWednesday,no,5.1,poor,4\nThursday,yes,7.9,good,7\nThursday,no,6.0,poor,5\nFriday,yes,7.8,good,8\nFriday,no,6.5,fair,6\nSaturday,no,6.4,fair,6\nSaturday,yes,7.2,good,7\nSunday,no,6.1,fair,5\nSunday,yes,7.6,good,8")
+                               "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
+
+   # manual_data = st.text_area("Enter your data as CSV (with headers)",
+       #                        "day,supplement,hours sleep,sleep quality,energy level\nMonday,yes,7.5,good,8\nMonday,no,5.5,poor,5\nTuesday,yes,8.3,excellent,9\nWednesday,yes,8.5,excellent,9\nWednesday,no,5.1,poor,4\nThursday,yes,7.9,good,7\nThursday,no,6.0,poor,5\nFriday,yes,7.8,good,8\nFriday,no,6.5,fair,6\nSaturday,no,6.4,fair,6\nSaturday,yes,7.2,good,7\nSunday,no,6.1,fair,5\nSunday,yes,7.6,good,8")
     try:
         from io import StringIO
         data = pd.read_csv(StringIO(manual_data))
@@ -72,7 +90,9 @@ else:
 
 if data is not None:
     st.subheader("Your Data")
-    st.dataframe(data)
+    #st.dataframe(data)
+    data = st.data_editor(data, num_rows="dynamic", use_container_width=True)
+
 
     colnames = list(data.columns)
     if len(colnames) < 2:
@@ -97,11 +117,7 @@ if data is not None:
 
             if is_condition_numeric and is_outcome_numeric:
                 corr, pval = stats.pearsonr(data_num[condition_col], data_num[outcome_col])
-                st.subheader("📊 Summary Statistics")
-                stats_summary = data[[condition_col, outcome_col]].copy()
-                stats_summary[outcome_col] = pd.to_numeric(stats_summary[outcome_col], errors='coerce')
-                stats_table = stats_summary.groupby(condition_col)[outcome_col].agg(['count', 'mean', 'std'])
-                st.table(stats_table)
+
                 fig, ax = plt.subplots()
                 sns.regplot(x=data_num[condition_col], y=data_num[outcome_col], ax=ax)
                 fig.savefig(plot_buffer, format="png")
@@ -119,17 +135,18 @@ if data is not None:
                 st.subheader("📊 Summary Statistics")
                 stats_summary = data[[condition_col, outcome_col]].copy()
                 stats_summary[outcome_col] = pd.to_numeric(stats_summary[outcome_col], errors='coerce')
-                stats_table = stats_summary.groupby(condition_col)[outcome_col].agg(['count', 'mean', 'std'])
+                stats_table = stats_summary.groupby(condition_col)[outcome_col].agg(['count', 'mean', 'median', 'std'])
                 st.table(stats_table)
                 if len(groups) == 2:
                     
                     group1 = data[data[condition_col] == groups[0]][outcome_col].astype(float).dropna()
                     group2 = data[data[condition_col] == groups[1]][outcome_col].astype(float).dropna()
                     tstat, pval = stats.ttest_ind(group1, group2, equal_var=False)
+                    
                     st.subheader("📈 Visualization")
                     fig, ax = plt.subplots()
                     sns.boxplot(data=data, x=condition_col, y=outcome_col, ax=ax, showfliers=False)
-                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", color="black")
+                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", linestyles = "None", color="black")
                     fig.savefig(plot_buffer, format="png")
                     st.pyplot(fig)
                     st.subheader("🧠 T-Test Result")
@@ -144,7 +161,7 @@ if data is not None:
                     st.subheader("📈 Visualization")
                     fig, ax = plt.subplots()
                     sns.boxplot(data=data, x=condition_col, y=outcome_col, ax=ax, showfliers=False)
-                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", color="black")
+                    sns.pointplot(data=data, x=condition_col, y=outcome_col, ax=ax, ci="sd", markers="D", linestyles = "None", color="black")
                     fig.savefig(plot_buffer, format="png")
                     st.pyplot(fig)
                     st.subheader("🧠 ANOVA Test Result")
@@ -179,23 +196,6 @@ if data is not None:
 
             if plot_buffer:
                 st.download_button("Download plot as PNG", plot_buffer.getvalue(), "result_plot.png", "image/png")
-
-            # --- Share results (hypothetical: can add link later) ---
-            st.markdown("### 📣 Share Your Results")
-            st.markdown("Want to share your results? Right-click and copy your plot, or download it above and post it on social media!")
-            st.markdown("Optionally, tag your post with **#PersonalExperiment** to join the movement! 🧠✨")
-            st.markdown("You can share your findings directly on social media:")
-            share_url = "https://your-streamlit-app-url"  # Replace with your deployed app's URL
-            share_text = "Check out the results of my personal experiment! 📊 #PersonalExperiment"
-
-            fb_link = f"https://www.facebook.com/sharer/sharer.php?u={share_url}"
-            tw_link = f"https://twitter.com/intent/tweet?url={share_url}&text={share_text}"
-            ig_info = "Instagram doesn't support direct link shares, but you can post the image you downloaded to your story with #PersonalExperiment."
-
-            st.markdown(f"[Share on Facebook]({fb_link})")
-            st.markdown(f"[Share on X (Twitter)]({tw_link})")
-            st.markdown(f"📸 Instagram: {ig_info}")
-            st.markdown("Want to share your results? Right-click and copy your plot, or download it above and post it on social media!")
 
         except Exception as e:
             st.error(f"An error occurred during processing: {e}")
