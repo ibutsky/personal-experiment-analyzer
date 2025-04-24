@@ -240,7 +240,6 @@ if data is not None:
                 data[col] = data[col].replace(["", "None", "nan"], pd.NA)
             data = data.dropna(subset=[condition_col, outcome_col])
             removed = initial_rows - len(data[outcome_col])
-            st.warning(f"{removed} removed rows")
 
             if removed > 0:
                 st.warning(f"{removed} row(s) were removed because they had missing values in your selected columns.")
@@ -254,30 +253,30 @@ if data is not None:
             result_text = ""
             plot_buffer = BytesIO()
 
-            st.markdown("### 🎛️ Filter Your Data")
 
-            # For condition_col
-            if is_condition_numeric:
-                data[condition_col] = pd.to_numeric(data[condition_col], errors='coerce')
-                min_val, max_val = data[condition_col].min(), data[condition_col].max()
-                condition_range = st.slider(f"Filter {condition_col}:", float(min_val), float(max_val), (float(min_val), float(max_val)))
-                data = data[data[condition_col].between(condition_range[0], condition_range[1])]
-            else:
-                categories = sorted(data[condition_col].dropna().unique())
-                selected = st.multiselect(f"Select categories for {condition_col}:", categories, default=categories)
-                data = data[data[condition_col].isin(selected)]
+            with st.expander("### 🎛️ Filter Your Data"):
+                # For condition_col
+                if is_condition_numeric:
+                    data[condition_col] = pd.to_numeric(data[condition_col], errors='coerce')
+                    min_val, max_val = data[condition_col].min(), data[condition_col].max()
+                    condition_range = st.slider(f"Filter {condition_col}:", float(min_val), float(max_val), (float(min_val), float(max_val)))
+                    data = data[data[condition_col].between(condition_range[0], condition_range[1])]
+                else:
+                    categories = sorted(data[condition_col].dropna().unique())
+                    selected = st.multiselect(f"Select categories for {condition_col}:", categories, default=categories)
+                    data = data[data[condition_col].isin(selected)]
 
-            # For outcome_col
-            if is_outcome_numeric:
-                data[outcome_col] = pd.to_numeric(data[outcome_col], errors='coerce')
+                # For outcome_col
+                if is_outcome_numeric:
+                    data[outcome_col] = pd.to_numeric(data[outcome_col], errors='coerce')
 
-                min_val, max_val = data[outcome_col].min(), data[outcome_col].max()
-                outcome_range = st.slider(f"Filter {outcome_col}:", float(min_val), float(max_val), (float(min_val), float(max_val)))
-                data = data[data[outcome_col].between(outcome_range[0], outcome_range[1])]
-            else:
-                categories = sorted(data[outcome_col].dropna().unique())
-                selected = st.multiselect(f"Select categories for {outcome_col}:", categories, default=categories)
-                data = data[data[outcome_col].isin(selected)]
+                    min_val, max_val = data[outcome_col].min(), data[outcome_col].max()
+                    outcome_range = st.slider(f"Filter {outcome_col}:", float(min_val), float(max_val), (float(min_val), float(max_val)))
+                    data = data[data[outcome_col].between(outcome_range[0], outcome_range[1])]
+                else:
+                    categories = sorted(data[outcome_col].dropna().unique())
+                    selected = st.multiselect(f"Select categories for {outcome_col}:", categories, default=categories)
+                    data = data[data[outcome_col].isin(selected)]
                 
 
             if is_condition_numeric and is_outcome_numeric:
