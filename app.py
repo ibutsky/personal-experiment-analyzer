@@ -15,8 +15,54 @@ st.title("🧪 Personal Experiment Analyzer")
 
 st.markdown("""
 Use this tool to analyze whether a certain action (like eating a banana before bed) affects an outcome (like sleep hours).
-Upload a file or manually enter your data below.
+Upload a file, manually enter your data below, or take inspiration from on of the example datasets.\n\n Feeling stuck? """)
 
+# --- Sidebar for input method ---
+with st.expander("🧪 Try One of These Personal Experiments"):
+    st.markdown("""
+Here are some fun, simple experiments you can try:
+
+- **☕ Coffee & Focus**  
+  *Does caffeine help me focus?*  
+  Track: `caffeinated (yes/no)`, `focus score (1–10)`
+
+- **🎵 Music & Concentration**  
+  *Does music type affect how well I concentrate?*  
+  Track: `music type`, `concentration level`
+
+- **💤 Screens & Sleep**  
+  *Does screen time before bed hurt my sleep?*  
+  Track: `screen before bed (yes/no)`, `sleep hours`
+
+- **🕒 Hours Worked & Productivity**  
+  *Is there an optimal amount of work time for me?*  
+  Track: `hours worked`, `productivity score`
+
+- **🥑 Snack Type & Satisfaction**  
+  *Which snacks keep me full the longest?*  
+  Track: `snack type`, `satiety rating`
+
+- **🏃 Walks & Mood**  
+  *Does a walk boost my mood?*  
+  Track: `walked (yes/no)`, `mood`
+
+Start small—just 7 days of tracking can give surprising insights!
+""")
+
+
+with st.expander("📲 Explore Data You Already Have from Other Apps"):
+    st.markdown("""
+    Many apps you already use let you export your data as a CSV. Here are a few examples:
+
+    - **Apple Health**: Use [QS Access](https://apps.apple.com/us/app/qs-access/id920297614)
+    - **Strava**: [Export here](https://www.strava.com/settings/data_export)
+    - **Fitbit**: [Export from your dashboard](https://www.fitbit.com/settings/data/export)
+    - **Google Fit**: Use [Google Takeout](https://takeout.google.com/)
+
+    Once downloaded, upload the file using the **Upload CSV** tab above.
+    """)
+
+st.markdown("""
 _Not sure what statistical significance or p-values mean? Scroll to the bottom of the page for a quick intro and helpful links!_
 """)
 
