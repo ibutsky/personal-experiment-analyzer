@@ -21,7 +21,7 @@ _Not sure what statistical significance or p-values mean? Scroll to the bottom o
 """)
 
 # --- Sidebar for input method ---
-input_method = st.sidebar.radio("How would you like to enter your data?", ["Manual Entry", "Upload CSV"])
+input_method = st.sidebar.radio("How would you like to enter your data?", ["Manual Entry", "Upload File"])
 sample_data_option = st.sidebar.selectbox("Try an example dataset:", [
     "None",
     "Sleep + Supplement (T-test)",
@@ -52,8 +52,8 @@ sample_datasets = {
 
 # --- Data loading ---
 data = None
-if input_method == "Upload CSV":
-    uploaded_file = st.file_uploader("Upload your file (csv, tsv, xls, xls, pkl, parquet)", type=["csv", "tsv", "xls", "xlsx", "pkl", "parquet"])
+if input_method == "Upload File":
+    uploaded_file = st.file_uploader("Upload your file", type=["csv", "tsv", "xls", "xlsx", "pkl", "parquet"])
     if uploaded_file is not None:
         file_type = uploaded_file.name.split('.')[-1]
         try:
