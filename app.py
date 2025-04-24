@@ -166,62 +166,67 @@ Start small—just 7 days of tracking can give surprising insights!
 """)
 
 with st.sidebar.expander("📲 Explore Data You May Already Have from Other Apps"):
-    st.markdown("""
-### Export Your Data for Analysis
+    st.markdown("Already using a fitness or health app? You can export your data and explore it here.")
 
-If you use fitness or health tracking apps, you may already have useful data! Here's how to export it:
+    app_choice = st.selectbox("Select a source app:", [
+        "Apple Health", "Google Fit", "Strava", "Garmin Connect", "Fitbit"
+    ])
+    if app_choice == "Apple Health":
+        st.markdown("""
+### 🍎 Apple Health (iPhone/Apple Watch)
+1. Open the **Health** app on your iPhone.
+2. Tap your profile icon → **Export All Health Data**.
+3. You'll get a `.zip` file containing an `export.xml`.
+4. Tools to convert to CSV:
+   - [QS Access](https://apps.apple.com/us/app/qs-access/id920297614)
+   - [Health Auto Export](https://apps.apple.com/us/app/health-auto-export-to-csv/id1455780541)
+        """)
 
----
+    elif app_choice == "Google Fit":
+        st.markdown("""
+### 📱 Google Fit
+1. Go to [Google Takeout](https://takeout.google.com/).
+2. Select only **Google Fit**.
+3. Export your data as a `.zip` archive.
+4. Open `Daily Summaries.json` or `Sessions.json`, then convert it to CSV using a JSON converter or script.
+        """)
 
-#### 🍎 Apple Health (iPhone/Apple Watch)
-1. Open the **Health** app
-2. Tap your profile → **Export All Health Data**
-3. You'll get a `.zip` with an `export.xml`
-4. Convert using:
-   - [QS Access](https://apps.apple.com/us/app/qs-access/id920297614) (CSV)
-   - [Health Auto Export](https://apps.apple.com/us/app/health-auto-export-to-csv/id1455780541) (Google Sheets/iCloud)
+    elif app_choice == "Strava":
+        st.markdown("""
+### 🚴 Strava
 
----
+**Option 1: Export All Activities**
+1. Log in at [Strava.com](https://www.strava.com/).
+2. Go to [Account Export](https://www.strava.com/athlete/delete_your_account).
+3. Click **“Request your archive”** and wait for the email.
+4. Open the ZIP → use `activities.csv` for upload.
 
-#### 📱 Google Fit
-1. Go to [Google Takeout](https://takeout.google.com/)
-2. Select only **Google Fit**
-3. Export as `.zip` and extract `Daily Summaries.json`
-4. Convert JSON to CSV using a tool or script
+**Option 2: Export a Single Activity**
+1. Open an activity page.
+2. Click “...” → **Export GPX**, or use `/export_tcx` in the URL.
+        """)
 
----
+    elif app_choice == "Garmin Connect":
+        st.markdown("""
+### ⌚ Garmin Connect
+1. Go to [Garmin Connect](https://connect.garmin.com/).
+2. Profile → Account Settings → **Export Your Data**.
+3. You'll receive a ZIP file via email.
+4. Inside, use `Activities.csv` or export individual activity files via the gear icon.
+        """)
 
-#### 🚴 Strava
-**Option 1: Full Archive**
-- Visit: [strava.com/settings/data_export](https://www.strava.com/settings/data_export)
-- Request your archive → download `.zip` → use `activities.csv`
+    elif app_choice == "Fitbit":
+        st.markdown("""
+### 💤 Fitbit
+1. Go to [Fitbit Data Export](https://www.fitbit.com/settings/data/export).
+2. Choose a date range (max 31 days).
+3. Download the ZIP with CSVs for:
+   - Sleep
+   - Heart rate
+   - Steps
+   - Activities
+        """)
 
-**Option 2: Single Activity**
-- Open any activity → “...” → **Export Original**
-- Convert `.fit/.gpx` using [fitfiletools.com](https://www.fitfiletools.com/)
-
----
-
-#### ⌚ Garmin Connect
-1. Log into [Garmin Connect](https://connect.garmin.com/)
-2. Go to Profile > Account Settings > Export Your Data
-3. You'll get a `.zip` with `Activities.csv` and JSON logs
-4. Or: Export individual workouts (gear icon > Export CSV)
-
----
-
-#### 💤 Fitbit
-1. Go to: [fitbit.com/settings/data/export](https://www.fitbit.com/settings/data/export)
-2. Select date range and download `.zip`
-3. Includes CSVs for sleep, steps, activities, heart rate
-
----
-
-Once exported:
-- Clean in Google Sheets or Excel if needed
-- Rename columns to match your experiment (e.g., `condition`, `outcome`)
-- Upload to this app using **Upload CSV** or paste into the editable table
-    """)
 
 
 st.markdown("""
