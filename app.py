@@ -9,6 +9,7 @@ import base64
 from io import StringIO
 
 
+
 st.set_page_config(page_title="Run Your Own Experiment", layout="centered")
 st.title("🧪 Personal Experiment Analyzer")
 
@@ -39,21 +40,20 @@ sample_data_option = st.sidebar.selectbox("Try an example dataset:", [
 
 # --- Preloaded samples ---
 sample_datasets = {
-    "Sleep + Supplement (T-test)": "day,supplement,hours sleep\nMonday,yes,7.5\nMonday,no,5.5\nTuesday,yes,8.3\nWednesday,no,5.1\nThursday,yes,7.9\nFriday,no,6.5",
     "Sleep Hours vs Energy (Correlation)": "energy_level,hours sleep\n5,6.0\n6,6.5\n7,7.2\n8,7.8\n9,8.1\n10,8.4",
-    "Caffeine & Focus (T-test)": "caffeine,focus_score\nyes,8\nno,6\nyes,7\nno,5\nyes,9\nno,4",
-    "Exercise Type & Mood (Chi-square)": "exercise_type,mood\nyoga,calm\nrunning,energized\nweights,strong\nyoga,calm\nrunning,stressed\nweights,strong",
     "Hours Worked vs Productivity (Correlation)": "hours_worked,productivity_score\n5,6\n6,7\n7,8\n8,8\n9,7\n10,6",
+    "Sleep + Supplement (T-test)": "day,supplement,hours sleep\nMonday,yes,7.5\nMonday,no,5.5\nTuesday,yes,8.3\nWednesday,no,5.1\nThursday,yes,7.9\nFriday,no,6.5",
+    "Meditation & Stress Levels (T-test)": "meditated,stress_level\nyes,3\nno,7\nyes,2\nno,8\nyes,4\nno,6",
+    "Caffeine & Focus (T-test)": "caffeine,focus_score\nyes,8\nno,6\nyes,7\nno,5\nyes,9\nno,4",
     "Snack Type & Satisfaction (ANOVA)": "snack,satisfaction_score\nfruit,7\nchips,5\nnuts,6\nfruit,8\nchips,4\nnuts,7",
-    "Music Genre & Concentration (Chi-square)": "music_genre,concentration\nclassical,high\npop,medium\nrock,low\nclassical,high\npop,medium\nrock,low",
-    "Screen Time vs Happiness (Correlation)": "screen_time,happiness_score\n2,8\n4,7\n6,6\n8,5\n10,4\n12,3",
-    "Meditation & Stress Levels (T-test)": "meditated,stress_level\nyes,3\nno,7\nyes,2\nno,8\nyes,4\nno,6"
+    "Exercise Type & Mood (Chi-square)": "exercise_type,mood\nyoga,calm\nrunning,energized\nweights,strong\nyoga,calm\nrunning,stressed\nweights,strong",
+    "Music Genre & Concentration (Chi-square)": "music_genre,concentration\nclassical,high\npop,medium\nrock,low\nclassical,high\npop,medium\nrock,low"
 }
 
 # --- Data loading ---
 data = None
 if input_method == "Upload CSV":
-    uploaded_file = st.file_uploader("Upload your file (CSV, TSV, XLS, XLSX)", type=["csv", "tsv", "xls", "xlsx"])
+    uploaded_file = st.file_uploader("Upload your file (csv, tsv, xls, xls, pkl, parquet)", type=["csv", "tsv", "xls", "xlsx", "pkl", "parquet"])
     if uploaded_file is not None:
         file_type = uploaded_file.name.split('.')[-1]
         try:
@@ -63,6 +63,10 @@ if input_method == "Upload CSV":
                 data = pd.read_csv(uploaded_file, sep='\t')
             elif file_type in ['xls', 'xlsx']:
                 data = pd.read_excel(uploaded_file)
+            elif file_type == "pkl":
+                data = pd.read_pickle(uploaded_file)
+            elif file_type == "parquet":
+                data = pd.read_parquet(uploaded_file)
             else:
                 st.error("Unsupported file type.")
         except Exception as e:
@@ -110,21 +114,61 @@ if data is not None:
             plot_buffer = BytesIO()
 
             if is_condition_numeric and is_outcome_numeric:
-                corr, pval = stats.pearsonr(data_num[condition_col], data_num[outcome_col])
+                import numpy as np
+                from sklearn.linear_model import LinearRegression
 
+                x = data_num[condition_col].values.reshape(-1, 1)
+                y = data_num[outcome_col].values
+
+                # Linear model
+                linear_model = LinearRegression().fit(x, y)
+                linear_preds = linear_model.predict(x)
+                linear_r2 = linear_model.score(x, y)
+
+                # Quadratic model
+                x_quad = np.hstack([x, x**2])
+                quad_model = LinearRegression().fit(x_quad, y)
+                quad_preds = quad_model.predict(x_quad)
+                quad_r2 = quad_model.score(x_quad, y)
+
+                # Decide which model fits better using R² and penalty for complexity
+                adjusted_r2_linear = 1 - (1 - linear_r2) * (len(y) - 1) / (len(y) - 1 - 1)
+                adjusted_r2_quad = 1 - (1 - quad_r2) * (len(y) - 1) / (len(y) - 1 - 2)
+                better_model = "quadratic" if adjusted_r2_quad > adjusted_r2_linear + 0.1 else "linear"
+
+                st.subheader("📈 Visualization")
                 fig, ax = plt.subplots()
-                sns.regplot(x=data_num[condition_col], y=data_num[outcome_col], ax=ax)
+                if better_model == "quadratic":
+                    sns.scatterplot(x=data_num[condition_col], y=y, ax=ax)
+                    sns.lineplot(x=data_num[condition_col], y=quad_preds, color="black", ax=ax)
+                else:
+                    sns.regplot(x=data_num[condition_col], y=data_num[outcome_col], ax=ax)
+
                 fig.savefig(plot_buffer, format="png")
                 st.pyplot(fig)
+                
                 st.subheader("📖 How to Read This Plot")
-                st.markdown("This scatterplot shows the relationship between two numeric variables.\n- Each point represents one observation.\n- The black line is a best-fit line showing the trend.\n- If the points form a rising pattern, the variables are positively correlated.\n- If they fall together, it's a negative correlation.\n- The tighter the points hug the line, the stronger the relationship.")
+                if better_model == "quadratic":
+                    st.markdown("This plot uses a **quadratic regression**, which fits a curve to the data. This is useful when relationships are U-shaped or peak-shaped.\n\n- Each point represents one observation.\n- The black line is a best-fit line showing the trend.\n- If the points form a rising pattern, the variables are positively correlated.\n- If they fall together, it's a negative correlation.\n- The tighter the points hug the line, the stronger the relationship.")
+                else:
+                    st.markdown("This plot uses a **linear regression**, which fits a straight line.\n\n- Each point represents one observation.\n- The black line is a best-fit line showing the trend.\n- If the points form a rising pattern, the variables are positively correlated.\n- If they fall together, it's a negative correlation.\n- The tighter the points hug the line, the stronger the relationship.")
                 
                 st.subheader("🧠 Correlation Test Result")
-                result_text = f"There is a Pearson correlation of {corr:.3f} between {condition_col} and {outcome_col}, with a p-value of {pval:.4f}. "
-                if pval < 0.05:
-                    st.success(result_text + "This is considered statistically significant, meaning it's unlikely to have occurred by chance. 🎉")
+                if better_model == "quadratic":
+                    result_text = (f"A **quadratic model** better fits the relationship between **{condition_col}** and **{outcome_col}**. "
+                        f"This suggests a **nonlinear pattern**—such as a peak or dip—rather than a simple upward or downward trend.\n\n"
+                        f"**Adjusted R² = {adjusted_r2_quad:.3f}**, meaning the model explains that proportion of variance after correcting for complexity.\n\n"
+                        f"This kind of relationship often shows up when there's an **optimal value** (like productivity peaking at a certain number of hours).")
+                    st.info(result_text)
                 else:
-                    st.info(result_text + "This is not statistically significant. It might just be due to random variation.")
+                    corr, pval = stats.pearsonr(data_num[condition_col], data_num[outcome_col])
+
+                    result_text = f"There is a Pearson correlation of {corr:.3f} between {condition_col} and {outcome_col}, with a p-value of {pval:.4f}. "
+                    if pval < 0.05:
+                        st.success(result_text + "This is considered statistically significant, meaning it's unlikely to have occurred by chance. 🎉")
+                    else:
+                        st.info(result_text + "This is not statistically significant. It might just be due to random variation.")
+                        
                 group_sizes = len(data_num[outcome_col])
                 if group_sizes < 20:
                     st.warning("⚠️ Warning: One or more groups have fewer than 20 data points. Even if a result is marked 'statistically significant', it may not be meaningful with very small sample sizes. Collecting more data improves reliability.")
@@ -223,6 +267,7 @@ if data is not None:
 - [Understanding statistical significance](https://www.scribbr.com/statistics/statistical-significance/)
 - [Beginner-friendly intro to t-tests](https://www.scribbr.com/statistics/t-test/)
 - [Pearson correlation explained](https://www.statisticshowto.com/probability-and-statistics/correlation-coefficient-formula/)
+- [Statistics How To – Polynomial Regression](https://www.statisticshowto.com/polynomial-regression/)
 - [Chi-square test overview](https://www.scribbr.com/statistics/chi-square-test/)
 - [Intro to ANOVA](https://www.scribbr.com/statistics/anova/)
 - [Correlation ≠ Causation (with fun examples)](https://www.tylervigen.com/spurious-correlations)
