@@ -15,7 +15,7 @@ st.title("🧪 Personal Experiment Analyzer")
 
 st.markdown("""
 Use this tool to analyze whether a certain action (like eating a banana before bed) affects an outcome (like sleep hours).
-Upload a CSV or manually enter your data below.
+Upload a File or manually enter your data below.
 
 _Not sure what statistical significance or p-values mean? Scroll to the bottom of the page for a quick intro and helpful links!_
 """)
