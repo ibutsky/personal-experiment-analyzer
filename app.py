@@ -100,20 +100,6 @@ elif st.session_state["data_source"] == "manual":
         st.error("Failed to parse your input. Check format.")
         data = st.data_editor(default_df, num_rows="dynamic", use_container_width=True)
 
-#elif sample_data_option != "None":
-#if data is None:
-  #  from io import StringIO
-  #  data = pd.read_csv(StringIO(sample_datasets[sample_data_option]))
-#else:
-#st.sidebar.markdown("### Manual Entry")
-
-#manual_data = st.sidebar.text_area("Manually enter your data as CSV (with headers)",
-#                           "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
-#try:
-#    from io import StringIO
-#    data = pd.read_csv(StringIO(manual_data))
-##except Exception as e:
-  #  st.error("Failed to parse your input. Check format.")
 
 elif st.session_state["data_source"] == "sample":
     # --- Preloaded samples ---
@@ -235,7 +221,6 @@ _Not sure what statistical significance or p-values mean? Scroll to the bottom o
 
 if data is not None:
     st.subheader("Your Data")
-    #st.dataframe(data)
     data = st.data_editor(data, num_rows="dynamic", use_container_width=True)
 
 
@@ -250,10 +235,19 @@ if data is not None:
             data[condition_col] = data[condition_col].astype(str).str.strip()
             data[outcome_col] = data[outcome_col].astype(str).str.strip()
 
+            initial_rows = len(data[outcome_col])
+            for col in [condition_col, outcome_col]:
+                data[col] = data[col].replace(["", "None", "nan"], pd.NA)
+            data = data.dropna(subset=[condition_col, outcome_col])
+            removed = initial_rows - len(data[outcome_col])
+            st.warning(f"{removed} removed rows")
+
+            if removed > 0:
+                st.warning(f"{removed} row(s) were removed because they had missing values in your selected columns.")
+            
             data_num = data.copy()
             data_num[outcome_col] = pd.to_numeric(data_num[outcome_col], errors='coerce')
             data_num[condition_col] = pd.to_numeric(data_num[condition_col], errors='coerce')
-
             is_condition_numeric = data_num[condition_col].notna().all()
             is_outcome_numeric = data_num[outcome_col].notna().all()
 
