@@ -18,28 +18,29 @@ Use this tool to analyze whether a certain action (like eating a banana before b
 Upload a file, manually enter your data below, or take inspiration from one of the example datasets.""")
 
 
-st.sidebar.header("📊 Add Some Data")
+#st.sidebar.header("📊 Add Some Data")
 
-if "data_source" not in st.session_state:
-    st.session_state["data_source"] = "none"
-    st.session_state["data"] = None
+with st.expander("📊 Add Some Data"):
+    if "data_source" not in st.session_state:
+        st.session_state["data_source"] = "none"
+        st.session_state["data"] = None
 
-col1, col2, col3 = st.sidebar.columns(3)
-with col1:
-    if st.button("📁 Upload File"):
-        st.session_state["data_source"] = "upload"
-with col2:
-    if st.button("✍️ Manual Entry"):
-        st.session_state["data_source"] = "manual"
-with col3:
-    if st.button("🎓 Sample Dataset"):
-        st.session_state["data_source"] = "sample"
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📁 Upload File"):
+            st.session_state["data_source"] = "upload"
+    with col2:
+        if st.button("✍️ Manual Entry"):
+            st.session_state["data_source"] = "manual"
+    with col3:
+        if st.button("🎓 Sample Dataset"):
+            st.session_state["data_source"] = "sample"
         
         
 
 data = pd.read_csv(StringIO("eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5"))
 if st.session_state["data_source"] == "upload":
-    uploaded_file = st.sidebar.file_uploader("Upload your file", type=["csv", "tsv", "xls",
+    uploaded_file = st.file_uploader("Upload your file", type=["csv", "tsv", "xls",
                                         "xlsx", "pkl", "parquet", "json", "xml"])
     if uploaded_file is not None:
         file_type = uploaded_file.name.split('.')[-1]
@@ -91,7 +92,7 @@ if st.session_state["data_source"] == "upload":
             
 elif st.session_state["data_source"] == "manual":
     #default_df = pd.read_csv(StringIO(default_csv))
-    manual_data = st.sidebar.text_area("Manually enter your data as CSV (with headers)",
+    manual_data = st.text_area("Manually enter your data as CSV (with headers)",
                            "eating a banana,hours of sleep\nyes,7.5\nno,6.0\nyes,8.2\nno,5.5")
     try:
         from io import StringIO
@@ -113,106 +114,8 @@ elif st.session_state["data_source"] == "sample":
     "Exercise Type & Mood (Chi-square)": "exercise_type,mood\nyoga,calm\nrunning,energized\nweights,strong\nyoga,calm\nrunning,stressed\nweights,strong",
     "Music Genre & Concentration (Chi-square)": "music_genre,concentration\nclassical,high\npop,medium\nrock,low\nclassical,high\npop,medium\nrock,low"
     }
-    sample_name = st.sidebar.selectbox("Choose a sample dataset", list(sample_datasets.keys()))
+    sample_name = st.selectbox("Choose a sample dataset", list(sample_datasets.keys()))
     data = pd.read_csv(StringIO(sample_datasets[sample_name]))
-
-        
-# --- Sidebar for input method ---
-st.sidebar.header("Feeling Stuck?")
-
-with st.sidebar.expander("🧪 Try One of These Personal Experiments"):
-    st.markdown("""
-Here are some fun, simple experiments you can try:
-
-- **☕ Coffee & Focus**  
-  *Does caffeine help me focus?*  
-  Track: `caffeinated (yes/no)`, `focus score (1–10)`
-
-- **🎵 Music & Concentration**  
-  *Does music type affect how well I concentrate?*  
-  Track: `music type`, `concentration level`
-
-- **💤 Screens & Sleep**  
-  *Does screen time before bed hurt my sleep?*  
-  Track: `screen before bed (yes/no)`, `sleep hours`
-
-- **🕒 Hours Worked & Productivity**  
-  *Is there an optimal amount of work time for me?*  
-  Track: `hours worked`, `productivity score`
-
-- **🥑 Snack Type & Satisfaction**  
-  *Which snacks keep me full the longest?*  
-  Track: `snack type`, `satiety rating`
-
-- **🏃 Walks & Mood**  
-  *Does a walk boost my mood?*  
-  Track: `walked (yes/no)`, `mood`
-
-Start small—just 7 days of tracking can give surprising insights!
-""")
-
-with st.sidebar.expander("📲 Explore Data You May Already Have from Other Apps"):
-    st.markdown("Already using a fitness or health app? You can export your data and explore it here.")
-
-    app_choice = st.selectbox("Select a source app:", [
-        "Apple Health", "Google Fit", "Strava", "Garmin Connect", "Fitbit"
-    ])
-    if app_choice == "Apple Health":
-        st.markdown("""
-### 🍎 Apple Health (iPhone/Apple Watch)
-1. Open the **Health** app on your iPhone.
-2. Tap your profile icon → **Export All Health Data**.
-3. You'll get a `.zip` file containing an `export.xml`.
-4. Tools to convert to CSV:
-   - [QS Access](https://apps.apple.com/us/app/qs-access/id920297614)
-   - [Health Auto Export](https://apps.apple.com/us/app/health-auto-export-to-csv/id1455780541)
-        """)
-
-    elif app_choice == "Google Fit":
-        st.markdown("""
-### 📱 Google Fit
-1. Go to [Google Takeout](https://takeout.google.com/).
-2. Select only **Google Fit**.
-3. Export your data as a `.zip` archive.
-4. Open `Daily Summaries.json` or `Sessions.json`, then convert it to CSV using a JSON converter or script.
-        """)
-
-    elif app_choice == "Strava":
-        st.markdown("""
-### 🚴 Strava
-
-**Option 1: Export All Activities**
-1. Log in at [Strava.com](https://www.strava.com/).
-2. Go to [Account Export](https://www.strava.com/athlete/delete_your_account).
-3. Click **“Request your archive”** and wait for the email.
-4. Open the ZIP → use `activities.csv` for upload.
-
-**Option 2: Export a Single Activity**
-1. Open an activity page.
-2. Click “...” → **Export GPX**, or use `/export_tcx` in the URL.
-        """)
-
-    elif app_choice == "Garmin Connect":
-        st.markdown("""
-### ⌚ Garmin Connect
-1. Go to [Garmin Connect](https://connect.garmin.com/).
-2. Profile → Account Settings → **Export Your Data**.
-3. You'll receive a ZIP file via email.
-4. Inside, use `Activities.csv` or export individual activity files via the gear icon.
-        """)
-
-    elif app_choice == "Fitbit":
-        st.markdown("""
-### 💤 Fitbit
-1. Go to [Fitbit Data Export](https://www.fitbit.com/settings/data/export).
-2. Choose a date range (max 31 days).
-3. Download the ZIP with CSVs for:
-   - Sleep
-   - Heart rate
-   - Steps
-   - Activities
-        """)
-
 
 
 st.markdown("""
@@ -426,7 +329,108 @@ if data is not None:
         except Exception as e:
             st.error(f"An error occurred during processing: {e}")
 
+
+# --- Sidebar for input method ---
+st.markdown("""
+---
+### 🤔 Feeling Stuck?""")
+
+with st.expander("🧪 Try One of These Personal Experiments"):
     st.markdown("""
+Here are some fun, simple experiments you can try:
+
+- **☕ Coffee & Focus**  
+  *Does caffeine help me focus?*  
+  Track: `caffeinated (yes/no)`, `focus score (1–10)`
+
+- **🎵 Music & Concentration**  
+  *Does music type affect how well I concentrate?*  
+  Track: `music type`, `concentration level`
+
+- **💤 Screens & Sleep**  
+  *Does screen time before bed hurt my sleep?*  
+  Track: `screen before bed (yes/no)`, `sleep hours`
+
+- **🕒 Hours Worked & Productivity**  
+  *Is there an optimal amount of work time for me?*  
+  Track: `hours worked`, `productivity score`
+
+- **🥑 Snack Type & Satisfaction**  
+  *Which snacks keep me full the longest?*  
+  Track: `snack type`, `satiety rating`
+
+- **🏃 Walks & Mood**  
+  *Does a walk boost my mood?*  
+  Track: `walked (yes/no)`, `mood`
+
+Start small—just 7 days of tracking can give surprising insights!
+""")
+
+with st.expander("📲 Explore Data You May Already Have from Other Apps"):
+    st.markdown("Already using a fitness or health app? You can export your data and explore it here.")
+
+    app_choice = st.selectbox("Select a source app:", [
+        "Apple Health", "Google Fit", "Strava", "Garmin Connect", "Fitbit"
+    ])
+    if app_choice == "Apple Health":
+        st.markdown("""
+### 🍎 Apple Health (iPhone/Apple Watch)
+1. Open the **Health** app on your iPhone.
+2. Tap your profile icon → **Export All Health Data**.
+3. You'll get a `.zip` file containing an `export.xml`.
+4. Tools to convert to CSV:
+   - [QS Access](https://apps.apple.com/us/app/qs-access/id920297614)
+   - [Health Auto Export](https://apps.apple.com/us/app/health-auto-export-to-csv/id1455780541)
+        """)
+
+    elif app_choice == "Google Fit":
+        st.markdown("""
+### 📱 Google Fit
+1. Go to [Google Takeout](https://takeout.google.com/).
+2. Select only **Google Fit**.
+3. Export your data as a `.zip` archive.
+4. Open `Daily Summaries.json` or `Sessions.json`, then convert it to CSV using a JSON converter or script.
+        """)
+
+    elif app_choice == "Strava":
+        st.markdown("""
+### 🚴 Strava
+
+**Option 1: Export All Activities**
+1. Log in at [Strava.com](https://www.strava.com/).
+2. Go to [Account Export](https://www.strava.com/athlete/delete_your_account).
+3. Click **“Request your archive”** and wait for the email.
+4. Open the ZIP → use `activities.csv` for upload.
+
+**Option 2: Export a Single Activity**
+1. Open an activity page.
+2. Click “...” → **Export GPX**, or use `/export_tcx` in the URL.
+        """)
+
+    elif app_choice == "Garmin Connect":
+        st.markdown("""
+### ⌚ Garmin Connect
+1. Go to [Garmin Connect](https://connect.garmin.com/).
+2. Profile → Account Settings → **Export Your Data**.
+3. You'll receive a ZIP file via email.
+4. Inside, use `Activities.csv` or export individual activity files via the gear icon.
+        """)
+
+    elif app_choice == "Fitbit":
+        st.markdown("""
+### 💤 Fitbit
+1. Go to [Fitbit Data Export](https://www.fitbit.com/settings/data/export).
+2. Choose a date range (max 31 days).
+3. Download the ZIP with CSVs for:
+   - Sleep
+   - Heart rate
+   - Steps
+   - Activities
+        """)
+
+
+
+st.markdown("""
 ---
 ### 📚 Want to Learn More?
 - [What is a p-value? (with examples)](https://www.statsdirect.com/help/basics/p_values.htm)
