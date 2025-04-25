@@ -378,7 +378,7 @@ with st.expander("📲 Explore Data You May Already Have from Other Apps"):
 1. Open the **Health** app on your iPhone.
 2. Tap your profile icon → **Export All Health Data**.
 3. You'll get a `.zip` file containing an `export.xml`.
-4. Tools to convert to CSV:
+4. Now you can either upload the .xml file directly or convert it to CSV:
    - [QS Access](https://apps.apple.com/us/app/qs-access/id920297614)
    - [Health Auto Export](https://apps.apple.com/us/app/health-auto-export-to-csv/id1455780541)
         """)
@@ -389,7 +389,7 @@ with st.expander("📲 Explore Data You May Already Have from Other Apps"):
 1. Go to [Google Takeout](https://takeout.google.com/).
 2. Select only **Google Fit**.
 3. Export your data as a `.zip` archive.
-4. Open `Daily Summaries.json` or `Sessions.json`, then convert it to CSV using a JSON converter or script.
+4. Upload `Daily Summaries.json` or `Sessions.json`, or convert it to CSV using a JSON converter or script.
         """)
 
     elif app_choice == "Strava":
