@@ -11,10 +11,17 @@ from io import StringIO
 
 
 st.set_page_config(page_title="Run Your Own Experiment", layout="centered")
-st.title("🧪 Personal Experiment Analyzer")
+st.title("🔬 TinyTests")
 
 st.markdown("""
-Use this tool to analyze whether a certain action (like eating a banana before bed) affects an outcome (like sleep hours).
+**Turn everyday questions into small, meaningful experiments.**
+
+Whether you're testing if morning walks boost your mood or if eating a banana before bed affects your sleep, **TinyTests** helps you collect, visualize, and understand your personal data.
+
+_No stats background required. Just curiosity._
+
+
+
 Upload a file, manually enter your data below, or take inspiration from one of the example datasets.""")
 
 
