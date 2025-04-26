@@ -7,6 +7,10 @@ from scipy.stats import chi2_contingency, f_oneway
 from io import BytesIO
 import base64
 from io import StringIO
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+import filter_dataframe as fd
 
 
 
@@ -108,7 +112,6 @@ elif st.session_state["data_source"] == "manual":
         st.error("Failed to parse your input. Check format.")
         data = st.data_editor(default_df, num_rows="dynamic", use_container_width=True)
 
-
 elif st.session_state["data_source"] == "sample":
     # --- Preloaded samples ---
     sample_datasets = {
@@ -124,7 +127,7 @@ elif st.session_state["data_source"] == "sample":
     sample_name = st.selectbox("Choose a sample dataset", list(sample_datasets.keys()))
     data = pd.read_csv(StringIO(sample_datasets[sample_name]))
 
-
+st.session_state["data"] = data
 st.markdown("""
 _Not sure what statistical significance or p-values mean? Scroll to the bottom of the page for a quick intro and helpful links!_
 """)
@@ -153,6 +156,10 @@ if data is not None:
 
             if removed > 0:
                 st.warning(f"{removed} row(s) were removed because they had missing values in your selected columns.")
+                
+                
+            data = fd.filter_dataframe(data)
+
             
             data_num = data.copy()
             data_num[outcome_col] = pd.to_numeric(data_num[outcome_col], errors='coerce')
@@ -162,36 +169,8 @@ if data is not None:
 
             result_text = ""
             plot_buffer = BytesIO()
-
-
-            with st.expander("### 🎛️ Filter Your Data"):
-                # For condition_col
-                if is_condition_numeric:
-                    data[condition_col] = pd.to_numeric(data[condition_col], errors='coerce')
-                    min_val, max_val = data[condition_col].min(), data[condition_col].max()
-                    condition_range = st.slider(f"Filter {condition_col}:", float(min_val), float(max_val), (float(min_val), float(max_val)))
-                    data = data[data[condition_col].between(condition_range[0], condition_range[1])]
-                else:
-                    categories = sorted(data[condition_col].dropna().unique())
-                    selected = st.multiselect(f"Select categories for {condition_col}:", categories, default=categories)
-                    data = data[data[condition_col].isin(selected)]
-
-                # For outcome_col
-                if is_outcome_numeric:
-                    data[outcome_col] = pd.to_numeric(data[outcome_col], errors='coerce')
-
-                    min_val, max_val = data[outcome_col].min(), data[outcome_col].max()
-                    outcome_range = st.slider(f"Filter {outcome_col}:", float(min_val), float(max_val), (float(min_val), float(max_val)))
-                    data = data[data[outcome_col].between(outcome_range[0], outcome_range[1])]
-                else:
-                    categories = sorted(data[outcome_col].dropna().unique())
-                    selected = st.multiselect(f"Select categories for {outcome_col}:", categories, default=categories)
-                    data = data[data[outcome_col].isin(selected)]
-                
-
+            
             if is_condition_numeric and is_outcome_numeric:
-                import numpy as np
-                from sklearn.linear_model import LinearRegression
 
                 x = data_num[condition_col].values.reshape(-1, 1)
                 y = data_num[outcome_col].values
